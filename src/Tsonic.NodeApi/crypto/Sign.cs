@@ -122,7 +122,21 @@ public class Sign : Transform
     /// <returns>The signature.</returns>
     public string sign(object privateKey, string? outputEncoding = null)
     {
-        throw new NotImplementedException("KeyObject-based signing is not yet implemented");
+        var signature = sign(privateKey);
+
+        if (outputEncoding == null || outputEncoding == "buffer")
+        {
+            return Convert.ToBase64String(signature);
+        }
+
+        return outputEncoding.ToLowerInvariant() switch
+        {
+            "hex" => BitConverter.ToString(signature).Replace("-", "").ToLowerInvariant(),
+            "base64" => Convert.ToBase64String(signature),
+            "base64url" => Convert.ToBase64String(signature).Replace("+", "-").Replace("/", "_").TrimEnd('='),
+            "latin1" or "binary" => Encoding.Latin1.GetString(signature),
+            _ => throw new ArgumentException($"Unknown encoding: {outputEncoding}")
+        };
     }
 
     /// <summary>
@@ -132,7 +146,30 @@ public class Sign : Transform
     /// <returns>The signature as a byte array.</returns>
     public byte[] sign(object privateKey)
     {
-        throw new NotImplementedException("KeyObject-based signing is not yet implemented");
+        if (_finalized)
+            throw new InvalidOperationException("Sign already finalized");
+
+        if (privateKey is not PrivateKeyObject keyObject)
+            throw new ArgumentException("privateKey must be a PrivateKeyObject", nameof(privateKey));
+
+        _finalized = true;
+        var data = _dataStream.ToArray();
+
+        var key = keyObject.GetKey();
+        var hashAlgorithm = GetHashAlgorithmName(_algorithm);
+
+        if (key is RSA rsa)
+        {
+            return rsa.SignData(data, hashAlgorithm, RSASignaturePadding.Pkcs1);
+        }
+        else if (key is ECDsa ecdsa)
+        {
+            return ecdsa.SignData(data, hashAlgorithm);
+        }
+        else
+        {
+            throw new NotSupportedException($"Signing with key type {keyObject.asymmetricKeyType} is not supported");
+        }
     }
 
 #pragma warning disable CS1591

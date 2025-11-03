@@ -123,7 +123,19 @@ public class Verify : Transform
     /// <returns>True if verification succeeds, false otherwise.</returns>
     public bool verify(object publicKey, string signature, string? signatureEncoding = null)
     {
-        throw new NotImplementedException("KeyObject-based verification is not yet implemented");
+        byte[] signatureBytes;
+        var encoding = (signatureEncoding ?? "base64").ToLowerInvariant();
+
+        signatureBytes = encoding switch
+        {
+            "hex" => Convert.FromHexString(signature.Replace("-", "")),
+            "base64" => Convert.FromBase64String(signature),
+            "base64url" => Convert.FromBase64String(signature.Replace("-", "+").Replace("_", "/")),
+            "latin1" or "binary" => Encoding.Latin1.GetBytes(signature),
+            _ => Encoding.UTF8.GetBytes(signature)
+        };
+
+        return verify(publicKey, signatureBytes);
     }
 
     /// <summary>
@@ -134,7 +146,30 @@ public class Verify : Transform
     /// <returns>True if verification succeeds, false otherwise.</returns>
     public bool verify(object publicKey, byte[] signature)
     {
-        throw new NotImplementedException("KeyObject-based verification is not yet implemented");
+        if (_finalized)
+            throw new InvalidOperationException("Verify already finalized");
+
+        if (publicKey is not PublicKeyObject keyObject)
+            throw new ArgumentException("publicKey must be a PublicKeyObject", nameof(publicKey));
+
+        _finalized = true;
+        var data = _dataStream.ToArray();
+
+        var key = keyObject.GetKey();
+        var hashAlgorithm = GetHashAlgorithmName(_algorithm);
+
+        if (key is RSA rsa)
+        {
+            return rsa.VerifyData(data, signature, hashAlgorithm, RSASignaturePadding.Pkcs1);
+        }
+        else if (key is ECDsa ecdsa)
+        {
+            return ecdsa.VerifyData(data, signature, hashAlgorithm);
+        }
+        else
+        {
+            throw new NotSupportedException($"Verification with key type {keyObject.asymmetricKeyType} is not supported");
+        }
     }
 
 #pragma warning disable CS1591

@@ -106,6 +106,16 @@ public class PublicKeyObject : KeyObject
         _keyType = keyType ?? throw new ArgumentNullException(nameof(keyType));
     }
 
+    /// <summary>
+    /// Gets the underlying asymmetric algorithm for internal use.
+    /// </summary>
+    internal AsymmetricAlgorithm GetKey()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(PublicKeyObject));
+        return _key;
+    }
+
 #pragma warning disable CS1591
     public override string type => "public";
     public override string? asymmetricKeyType => _keyType;
@@ -196,6 +206,16 @@ public class PrivateKeyObject : KeyObject
     {
         _key = key ?? throw new ArgumentNullException(nameof(key));
         _keyType = keyType ?? throw new ArgumentNullException(nameof(keyType));
+    }
+
+    /// <summary>
+    /// Gets the underlying asymmetric algorithm for internal use.
+    /// </summary>
+    internal AsymmetricAlgorithm GetKey()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(PrivateKeyObject));
+        return _key;
     }
 
 #pragma warning disable CS1591

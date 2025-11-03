@@ -8,3 +8,7 @@ export * from "./buffer.js";
 export * from "./timers.js";
 export * from "./assert.js";
 export * from "./url.js";
+export * from "./console.js";
+export * from "./querystring.js";
+export * from "./string_decoder.js";
+export * from "./stream.js";

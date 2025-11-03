@@ -1,0 +1,19 @@
+{
+  "assemblyName": "Tsonic.NodeApi",
+  "types": {
+    "Tsonic.NodeApi.StringDecoder": {
+      "kind": "class",
+      "members": {
+        ".ctor(string)": {
+          "kind": "constructor"
+        },
+        "write(byte[])": {
+          "kind": "method"
+        },
+        "end(byte[])": {
+          "kind": "method"
+        }
+      }
+    }
+  }
+}

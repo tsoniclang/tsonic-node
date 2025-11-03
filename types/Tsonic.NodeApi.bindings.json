@@ -30,6 +30,12 @@
       "kind": "module",
       "assembly": "Tsonic.NodeApi",
       "type": "Tsonic.NodeApi.util"
+    },
+    "buffer": {
+      "kind": "module",
+      "assembly": "Tsonic.NodeApi",
+      "type": "Tsonic.NodeApi.Buffer",
+      "default": "Tsonic.NodeApi.Buffer"
     }
   }
 }

@@ -52,6 +52,28 @@
       "assembly": "Tsonic.NodeApi",
       "type": "Tsonic.NodeApi.URL",
       "default": "Tsonic.NodeApi.URL"
+    },
+    "console": {
+      "kind": "module",
+      "assembly": "Tsonic.NodeApi",
+      "type": "Tsonic.NodeApi.console"
+    },
+    "querystring": {
+      "kind": "module",
+      "assembly": "Tsonic.NodeApi",
+      "type": "Tsonic.NodeApi.querystring"
+    },
+    "string_decoder": {
+      "kind": "module",
+      "assembly": "Tsonic.NodeApi",
+      "type": "Tsonic.NodeApi.StringDecoder",
+      "default": "Tsonic.NodeApi.StringDecoder"
+    },
+    "stream": {
+      "kind": "module",
+      "assembly": "Tsonic.NodeApi",
+      "type": "Tsonic.NodeApi.Stream",
+      "default": "Tsonic.NodeApi.Stream"
     }
   }
 }

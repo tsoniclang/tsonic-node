@@ -1,5 +1,9 @@
 using System;
 using System.Security.Cryptography;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Math;
 
 namespace Tsonic.NodeApi;
 
@@ -16,10 +20,14 @@ public class DiffieHellman : IDisposable
 
     internal DiffieHellman(int primeLength, int generator = 2)
     {
-        // Generate a prime number and generator
-        // Note: .NET doesn't have built-in prime generation for DH
-        // This is a simplified implementation
-        throw new NotImplementedException("DiffieHellman with generated prime is not yet fully implemented. Use createDiffieHellman with explicit prime/generator.");
+        // Generate DH parameters using BouncyCastle
+        var dhGen = new DHParametersGenerator();
+        dhGen.Init(primeLength, 128, new SecureRandom()); // 128-bit certainty for primality test
+        var dhParams = dhGen.GenerateParameters();
+
+        // Convert BouncyCastle BigInteger to byte array
+        _prime = dhParams.P.ToByteArrayUnsigned();
+        _generator = BigInteger.ValueOf(generator).ToByteArrayUnsigned();
     }
 
     internal DiffieHellman(byte[] prime, byte[] generator)

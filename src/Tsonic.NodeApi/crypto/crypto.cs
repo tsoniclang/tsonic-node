@@ -470,7 +470,19 @@ public static partial class crypto
         }
         else if (keyType == "dsa")
         {
-            throw new NotImplementedException("DSA key generation is not yet implemented");
+            // Generate DSA key pair using BouncyCastle
+            var dsaGen = new Org.BouncyCastle.Crypto.Generators.DsaKeyPairGenerator();
+            var dsaParams = new Org.BouncyCastle.Crypto.Generators.DsaParametersGenerator();
+            dsaParams.Init(1024, 80, new SecureRandom()); // BouncyCastle requires 512-1024 range
+            var parameters = dsaParams.GenerateParameters();
+
+            dsaGen.Init(new Org.BouncyCastle.Crypto.Parameters.DsaKeyGenerationParameters(new SecureRandom(), parameters));
+            var bcKeyPair = dsaGen.GenerateKeyPair();
+
+            var publicKey = new DSAPublicKeyObject(bcKeyPair.Public);
+            var privateKey = new DSAPrivateKeyObject(bcKeyPair.Private);
+
+            return (publicKey, privateKey);
         }
         else if (keyType == "dh")
         {

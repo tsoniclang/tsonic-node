@@ -324,6 +324,108 @@ public class CryptoTests
     }
 
     [Fact]
+    public void Hash_SHA512_224_ProducesCorrectDigest()
+    {
+        var hash = crypto.createHash("sha512-224");
+        hash.update("test");
+        var digest = hash.digest("hex");
+        Assert.Equal(56, digest.Length); // SHA512-224 = 28 bytes = 56 hex chars
+    }
+
+    [Fact]
+    public void Hash_SHA512_256_ProducesCorrectDigest()
+    {
+        var hash = crypto.createHash("sha512-256");
+        hash.update("test");
+        var digest = hash.digest("hex");
+        Assert.Equal(64, digest.Length); // SHA512-256 = 32 bytes = 64 hex chars
+    }
+
+    [Fact]
+    public void Hash_SHAKE128_ProducesCorrectDigest()
+    {
+        var hash = crypto.createHash("shake128");
+        hash.update("test");
+        var digest = hash.digest(16); // Request 16 bytes
+        Assert.Equal(16, digest.Length);
+    }
+
+    [Fact]
+    public void Hash_SHAKE128_DefaultOutput()
+    {
+        var hash = crypto.createHash("shake128");
+        hash.update("test");
+        var digest = hash.digest(); // Default 16 bytes for SHAKE128
+        Assert.Equal(16, digest.Length);
+    }
+
+    [Fact]
+    public void Hash_SHAKE256_ProducesCorrectDigest()
+    {
+        var hash = crypto.createHash("shake256");
+        hash.update("test");
+        var digest = hash.digest(32); // Request 32 bytes
+        Assert.Equal(32, digest.Length);
+    }
+
+    [Fact]
+    public void Hash_SHAKE256_DefaultOutput()
+    {
+        var hash = crypto.createHash("shake256");
+        hash.update("test");
+        var digest = hash.digest(); // Default 32 bytes for SHAKE256
+        Assert.Equal(32, digest.Length);
+    }
+
+    [Fact]
+    public void Hash_Copy_WorksCorrectly()
+    {
+        var hash1 = crypto.createHash("blake2b512");
+        hash1.update("part1");
+
+        var hash2 = hash1.copy();
+
+        hash1.update("part2a");
+        var digest1 = hash1.digest("hex");
+
+        hash2.update("part2b");
+        var digest2 = hash2.digest("hex");
+
+        // Digests should be different since we updated with different data
+        Assert.NotEqual(digest1, digest2);
+    }
+
+    [Fact]
+    public void Hash_Copy_SHA3_WorksCorrectly()
+    {
+        var hash1 = crypto.createHash("sha3-256");
+        hash1.update("test");
+
+        var hash2 = hash1.copy();
+
+        var digest1 = hash1.digest("hex");
+        var digest2 = hash2.digest("hex");
+
+        // Digests should be identical since they have same state
+        Assert.Equal(digest1, digest2);
+    }
+
+    [Fact]
+    public void Hash_Copy_SHAKE_WorksCorrectly()
+    {
+        var hash1 = crypto.createHash("shake128");
+        hash1.update("test");
+
+        var hash2 = hash1.copy();
+
+        var digest1 = hash1.digest(16);
+        var digest2 = hash2.digest(16);
+
+        // Digests should be identical
+        Assert.Equal(digest1, digest2);
+    }
+
+    [Fact]
     public void Hash_Base64Encoding()
     {
         var hash = crypto.createHash("sha256");
@@ -768,6 +870,29 @@ public class CryptoTests
         var ecdh = crypto.createECDH("secp521r1");
         var publicKey = ecdh.generateKeys();
         Assert.NotEmpty(publicKey);
+    }
+
+    [Fact]
+    public void ECDH_secp256k1_Curve()
+    {
+        var ecdh = crypto.createECDH("secp256k1");
+        var publicKey = ecdh.generateKeys();
+        Assert.NotEmpty(publicKey);
+    }
+
+    [Fact]
+    public void ECDH_secp256k1_SharedSecret()
+    {
+        var alice = crypto.createECDH("secp256k1");
+        var bob = crypto.createECDH("secp256k1");
+
+        var alicePublic = alice.generateKeys();
+        var bobPublic = bob.generateKeys();
+
+        var aliceShared = alice.computeSecret(bobPublic);
+        var bobShared = bob.computeSecret(alicePublic);
+
+        Assert.Equal(aliceShared, bobShared);
     }
 
     // ============== KeyObject Tests ==============
@@ -1396,10 +1521,23 @@ public class CryptoTests
     // ========== DiffieHellman Advanced Methods ==========
 
     [Fact]
-    public void DiffieHellman_WithGeneratedPrime_ThrowsNotImplemented()
+    public void DiffieHellman_WithGeneratedPrime_Works()
     {
-        // DiffieHellman with auto-generated prime is not implemented
-        Assert.Throws<NotImplementedException>(() => crypto.createDiffieHellman(256));
+        // DiffieHellman with auto-generated prime
+        var dh = crypto.createDiffieHellman(512); // Use 512 for faster test
+
+        var prime = dh.getPrime();
+        var generator = dh.getGenerator();
+
+        Assert.NotNull(prime);
+        Assert.NotNull(generator);
+        Assert.True(prime.Length > 0);
+        Assert.True(generator.Length > 0);
+
+        // Should be able to generate keys
+        var publicKey = dh.generateKeys();
+        Assert.NotNull(publicKey);
+        Assert.True(publicKey.Length > 0);
     }
 
     // ========== ECDH Advanced Methods ==========
@@ -1618,9 +1756,16 @@ public class CryptoTests
     }
 
     [Fact]
-    public void GenerateKeyPairSync_DSA_ThrowsNotImplemented()
+    public void GenerateKeyPairSync_DSA_GeneratesKeys()
     {
-        Assert.Throws<NotImplementedException>(() => crypto.generateKeyPairSync("dsa", null));
+        var (publicKey, privateKey) = crypto.generateKeyPairSync("dsa", null);
+
+        Assert.NotNull(publicKey);
+        Assert.NotNull(privateKey);
+        Assert.Equal("public", publicKey.type);
+        Assert.Equal("private", privateKey.type);
+        Assert.Equal("dsa", publicKey.asymmetricKeyType);
+        Assert.Equal("dsa", privateKey.asymmetricKeyType);
     }
 
     [Fact]

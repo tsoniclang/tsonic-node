@@ -301,11 +301,30 @@ public class ECDH : IDisposable
             "secp256r1" or "prime256v1" or "p-256" => ECCurve.NamedCurves.nistP256,
             "secp384r1" or "p-384" => ECCurve.NamedCurves.nistP384,
             "secp521r1" or "p-521" => ECCurve.NamedCurves.nistP521,
-            "secp256k1" => throw new NotImplementedException("secp256k1 curve is not supported in .NET"),
+            "secp256k1" => CreateSecp256k1Curve(),
             "brainpoolp256r1" => ECCurve.NamedCurves.brainpoolP256r1,
             "brainpoolp384r1" => ECCurve.NamedCurves.brainpoolP384r1,
             "brainpoolp512r1" => ECCurve.NamedCurves.brainpoolP512r1,
             _ => throw new ArgumentException($"Unknown or unsupported curve: {curveName}")
+        };
+    }
+
+    private static ECCurve CreateSecp256k1Curve()
+    {
+        // secp256k1 curve parameters (used by Bitcoin)
+        return new ECCurve
+        {
+            CurveType = ECCurve.ECCurveType.PrimeShortWeierstrass,
+            Prime = Convert.FromHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"),
+            A = Convert.FromHexString("0000000000000000000000000000000000000000000000000000000000000000"),
+            B = Convert.FromHexString("0000000000000000000000000000000000000000000000000000000000000007"),
+            G = new ECPoint
+            {
+                X = Convert.FromHexString("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"),
+                Y = Convert.FromHexString("483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8")
+            },
+            Order = Convert.FromHexString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"),
+            Cofactor = Convert.FromHexString("01")
         };
     }
 }

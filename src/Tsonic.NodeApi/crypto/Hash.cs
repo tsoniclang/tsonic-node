@@ -10,12 +10,27 @@ namespace Tsonic.NodeApi;
 /// </summary>
 public class Hash : Transform
 {
-    private readonly HashAlgorithm _algorithm;
+    private readonly HashAlgorithm? _algorithm;
+    private readonly Org.BouncyCastle.Crypto.Digests.ShakeDigest? _shakeDigest;
+    private readonly bool _isShake;
     private bool _finalized = false;
 
     internal Hash(string algorithm)
     {
-        _algorithm = CreateHashAlgorithm(algorithm);
+        var alg = algorithm.ToLowerInvariant();
+
+        // Check if it's a SHAKE algorithm (XOF)
+        if (alg == "shake128" || alg == "shake256")
+        {
+            _isShake = true;
+            _shakeDigest = alg == "shake128"
+                ? new ShakeDigest(128)
+                : new ShakeDigest(256);
+        }
+        else
+        {
+            _algorithm = CreateHashAlgorithm(algorithm);
+        }
     }
 
     /// <summary>
@@ -31,7 +46,15 @@ public class Hash : Transform
 
         var encoding = GetEncoding(inputEncoding ?? "utf8");
         var bytes = encoding.GetBytes(data);
-        _algorithm.TransformBlock(bytes, 0, bytes.Length, null, 0);
+
+        if (_isShake)
+        {
+            _shakeDigest!.BlockUpdate(bytes, 0, bytes.Length);
+        }
+        else
+        {
+            _algorithm!.TransformBlock(bytes, 0, bytes.Length, null, 0);
+        }
         return this;
     }
 
@@ -45,7 +68,14 @@ public class Hash : Transform
         if (_finalized)
             throw new InvalidOperationException("Digest already called");
 
-        _algorithm.TransformBlock(data, 0, data.Length, null, 0);
+        if (_isShake)
+        {
+            _shakeDigest!.BlockUpdate(data, 0, data.Length);
+        }
+        else
+        {
+            _algorithm!.TransformBlock(data, 0, data.Length, null, 0);
+        }
         return this;
     }
 
@@ -54,14 +84,9 @@ public class Hash : Transform
     /// </summary>
     /// <param name="encoding">The encoding of the return value.</param>
     /// <returns>The calculated hash.</returns>
-    public string digest(string? encoding = null)
+    public string digest(string? encoding)
     {
-        if (_finalized)
-            throw new InvalidOperationException("Digest already called");
-
-        _finalized = true;
-        _algorithm.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-        var hash = _algorithm.Hash!;
+        var hash = digestBytes();
 
         if (encoding == null || encoding == "buffer")
         {
@@ -85,12 +110,39 @@ public class Hash : Transform
     /// <returns>The calculated hash as a byte array.</returns>
     public byte[] digest()
     {
+        return digestBytes();
+    }
+
+    /// <summary>
+    /// Calculates the digest with SHAKE output length control.
+    /// </summary>
+    /// <param name="outputLength">For SHAKE algorithms, the output length in bytes.</param>
+    /// <returns>The calculated hash as a byte array.</returns>
+    public byte[] digest(int outputLength)
+    {
+        return digestBytes(outputLength);
+    }
+
+    private byte[] digestBytes(int? outputLength = null)
+    {
         if (_finalized)
             throw new InvalidOperationException("Digest already called");
 
         _finalized = true;
-        _algorithm.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-        return _algorithm.Hash!;
+
+        if (_isShake)
+        {
+            // For SHAKE, use the specified output length or defaults
+            int length = outputLength ?? (_shakeDigest!.AlgorithmName.Contains("128") ? 16 : 32);
+            var hash = new byte[length];
+            _shakeDigest!.OutputFinal(hash, 0, length);
+            return hash;
+        }
+        else
+        {
+            _algorithm!.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            return _algorithm.Hash!;
+        }
     }
 
     /// <summary>
@@ -99,7 +151,49 @@ public class Hash : Transform
     /// <returns>A new Hash object.</returns>
     public Hash copy()
     {
-        throw new NotImplementedException("Hash.copy() is not yet implemented");
+        if (_finalized)
+            throw new InvalidOperationException("Cannot copy finalized hash");
+
+        var newHash = new Hash("md5"); // Placeholder, we'll replace the internals
+
+        if (_isShake)
+        {
+            // Clone SHAKE digest
+            var newShake = new ShakeDigest(_shakeDigest!);
+            typeof(Hash).GetField("_shakeDigest", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .SetValue(newHash, newShake);
+            typeof(Hash).GetField("_isShake", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .SetValue(newHash, true);
+            typeof(Hash).GetField("_algorithm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .SetValue(newHash, null);
+        }
+        else if (_algorithm is BouncyCastleHashAlgorithm bcHash)
+        {
+            // Clone BouncyCastle hash
+            var digestField = typeof(BouncyCastleHashAlgorithm).GetField("_digest", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var originalDigest = (Org.BouncyCastle.Crypto.IDigest)digestField!.GetValue(bcHash)!;
+
+            // Create new digest of same type and copy state
+            Org.BouncyCastle.Crypto.IDigest newDigest = originalDigest switch
+            {
+                Sha3Digest sha3 => new Sha3Digest(sha3),
+                Blake2bDigest blake2b => new Blake2bDigest(blake2b),
+                Blake2sDigest blake2s => new Blake2sDigest(blake2s),
+                RipeMD160Digest ripemd => new RipeMD160Digest(ripemd),
+                Sha512tDigest sha512t => new Sha512tDigest(sha512t),
+                _ => throw new NotSupportedException($"Copy not supported for {originalDigest.GetType().Name}")
+            };
+
+            var newBcHash = new BouncyCastleHashAlgorithm(newDigest);
+            typeof(Hash).GetField("_algorithm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .SetValue(newHash, newBcHash);
+        }
+        else
+        {
+            throw new NotSupportedException("Hash.copy() is only supported for SHAKE and BouncyCastle-based hashes");
+        }
+
+        return newHash;
     }
 
 #pragma warning disable CS1591
@@ -132,14 +226,14 @@ public class Hash : Transform
             "sha256" or "sha-256" => SHA256.Create(),
             "sha384" or "sha-384" => SHA384.Create(),
             "sha512" or "sha-512" => SHA512.Create(),
-            "sha512-224" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "sha512-256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
+            "sha512-224" => new BouncyCastleHashAlgorithm(new Sha512tDigest(224)),
+            "sha512-256" => new BouncyCastleHashAlgorithm(new Sha512tDigest(256)),
             "sha3-224" => new BouncyCastleHashAlgorithm(new Sha3Digest(224)),
             "sha3-256" => new BouncyCastleHashAlgorithm(new Sha3Digest(256)),
             "sha3-384" => new BouncyCastleHashAlgorithm(new Sha3Digest(384)),
             "sha3-512" => new BouncyCastleHashAlgorithm(new Sha3Digest(512)),
-            "shake128" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "shake256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
+            "shake128" => throw new InvalidOperationException("SHAKE128 is handled separately in constructor"),
+            "shake256" => throw new InvalidOperationException("SHAKE256 is handled separately in constructor"),
             "ripemd160" or "rmd160" => new BouncyCastleHashAlgorithm(new RipeMD160Digest()),
             "blake2b512" => new BouncyCastleHashAlgorithm(new Blake2bDigest(512)),
             "blake2s256" => new BouncyCastleHashAlgorithm(new Blake2sDigest(256)),

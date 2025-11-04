@@ -1491,21 +1491,28 @@ public class CryptoTests
     // ========== NotImplemented Methods Tests ==========
 
     [Fact]
-    public void ScryptSync_ThrowsNotImplemented()
+    public void ScryptSync_GeneratesKey()
     {
-        Assert.Throws<NotImplementedException>(() => crypto.scryptSync("password", "salt", 32, null));
+        var key = crypto.scryptSync("password", "salt", 32, null);
+
+        Assert.NotNull(key);
+        Assert.Equal(32, key.Length);
     }
 
     [Fact]
-    public void Scrypt_Callback_ThrowsNotImplemented()
+    public void Scrypt_Callback_GeneratesKey()
     {
         Exception? caughtError = null;
+        byte[]? resultKey = null;
         crypto.scrypt("password", "salt", 32, null, (err, key) =>
         {
             caughtError = err;
+            resultKey = key;
         });
 
-        Assert.IsType<NotImplementedException>(caughtError);
+        Assert.Null(caughtError);
+        Assert.NotNull(resultKey);
+        Assert.Equal(32, resultKey.Length);
     }
 
     [Fact]
@@ -1559,34 +1566,55 @@ public class CryptoTests
     }
 
     [Fact]
-    public void HkdfSync_ThrowsNotImplemented()
+    public void HkdfSync_DerivesKey()
     {
-        Assert.Throws<NotImplementedException>(() =>
-            crypto.hkdfSync("sha256", new byte[32], new byte[16], new byte[16], 32));
+        var ikm = new byte[32];
+        var salt = new byte[16];
+        var info = new byte[16];
+
+        var key = crypto.hkdfSync("sha256", ikm, salt, info, 32);
+
+        Assert.NotNull(key);
+        Assert.Equal(32, key.Length);
     }
 
     [Fact]
-    public void Hkdf_Callback_ThrowsNotImplemented()
+    public void Hkdf_Callback_DerivesKey()
     {
         Exception? caughtError = null;
+        byte[]? resultKey = null;
         crypto.hkdf("sha256", new byte[32], new byte[16], new byte[16], 32, (err, key) =>
         {
             caughtError = err;
+            resultKey = key;
         });
 
-        Assert.IsType<NotImplementedException>(caughtError);
+        Assert.Null(caughtError);
+        Assert.NotNull(resultKey);
+        Assert.Equal(32, resultKey.Length);
     }
 
     [Fact]
-    public void GetDiffieHellman_ThrowsNotImplemented()
+    public void GetDiffieHellman_CreatesGroupInstance()
     {
-        Assert.Throws<NotImplementedException>(() => crypto.getDiffieHellman("modp1"));
+        var dh = crypto.getDiffieHellman("modp1");
+
+        Assert.NotNull(dh);
+        Assert.NotNull(dh.getPrime());
+        Assert.NotNull(dh.getGenerator());
     }
 
     [Fact]
-    public void GenerateKeyPairSync_Ed25519_ThrowsNotImplemented()
+    public void GenerateKeyPairSync_Ed25519_GeneratesKeys()
     {
-        Assert.Throws<NotImplementedException>(() => crypto.generateKeyPairSync("ed25519", null));
+        var (publicKey, privateKey) = crypto.generateKeyPairSync("ed25519", null);
+
+        Assert.NotNull(publicKey);
+        Assert.NotNull(privateKey);
+        Assert.Equal("public", publicKey.type);
+        Assert.Equal("private", privateKey.type);
+        Assert.Equal("ed25519", publicKey.asymmetricKeyType);
+        Assert.Equal("ed25519", privateKey.asymmetricKeyType);
     }
 
     [Fact]

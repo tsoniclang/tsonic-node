@@ -1,6 +1,9 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace Tsonic.NodeApi;
 
@@ -123,13 +126,13 @@ public class Hmac : Transform
             "sha512" or "sha-512" => new HMACSHA512(key),
             "sha512-224" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
             "sha512-256" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "sha3-224" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "sha3-256" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "sha3-384" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "sha3-512" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "ripemd160" or "rmd160" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "blake2b512" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
-            "blake2s256" => throw new NotImplementedException($"HMAC algorithm {algorithm} is not implemented"),
+            "sha3-224" => new BouncyCastleHMAC(new Sha3Digest(224), key),
+            "sha3-256" => new BouncyCastleHMAC(new Sha3Digest(256), key),
+            "sha3-384" => new BouncyCastleHMAC(new Sha3Digest(384), key),
+            "sha3-512" => new BouncyCastleHMAC(new Sha3Digest(512), key),
+            "ripemd160" or "rmd160" => new BouncyCastleHMAC(new RipeMD160Digest(), key),
+            "blake2b512" => new BouncyCastleHMAC(new Blake2bDigest(512), key),
+            "blake2s256" => new BouncyCastleHMAC(new Blake2sDigest(256), key),
             _ => throw new ArgumentException($"Unknown HMAC algorithm: {algorithm}")
         };
     }
@@ -146,5 +149,49 @@ public class Hmac : Transform
             "hex" => Encoding.ASCII,
             _ => Encoding.UTF8
         };
+    }
+}
+
+/// <summary>
+/// Wrapper to adapt BouncyCastle HMac to .NET HMAC.
+/// </summary>
+internal class BouncyCastleHMAC : HMAC
+{
+    private readonly HMac _hmac;
+    private byte[]? _hashValue;
+
+    public BouncyCastleHMAC(Org.BouncyCastle.Crypto.IDigest digest, byte[] key)
+    {
+        _hmac = new HMac(digest);
+        _hmac.Init(new KeyParameter(key));
+        HashSizeValue = digest.GetDigestSize() * 8;
+        Key = key;
+    }
+
+    public override void Initialize()
+    {
+        _hmac.Reset();
+        _hashValue = null;
+    }
+
+    protected override void HashCore(byte[] array, int ibStart, int cbSize)
+    {
+        _hmac.BlockUpdate(array, ibStart, cbSize);
+    }
+
+    protected override byte[] HashFinal()
+    {
+        _hashValue = new byte[_hmac.GetMacSize()];
+        _hmac.DoFinal(_hashValue, 0);
+        return _hashValue;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _hmac.Reset();
+        }
+        base.Dispose(disposing);
     }
 }

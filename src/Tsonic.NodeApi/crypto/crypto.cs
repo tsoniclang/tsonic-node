@@ -1,6 +1,10 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 
 namespace Tsonic.NodeApi;
 
@@ -229,7 +233,41 @@ public static partial class crypto
     /// </summary>
     public static byte[] scryptSync(string password, string salt, int keylen, object? options = null)
     {
-        throw new NotImplementedException("scrypt is not yet implemented");
+        return scryptSync(Encoding.UTF8.GetBytes(password), Encoding.UTF8.GetBytes(salt), keylen, options);
+    }
+
+    /// <summary>
+    /// Provides a synchronous scrypt implementation.
+    /// </summary>
+    public static byte[] scryptSync(byte[] password, byte[] salt, int keylen, object? options = null)
+    {
+        // Default scrypt parameters
+        int N = 16384;  // CPU/memory cost parameter (must be power of 2)
+        int r = 8;      // Block size parameter
+        int p = 1;      // Parallelization parameter
+
+        // Parse options if provided
+        if (options != null)
+        {
+            var optionsDict = options as System.Collections.Generic.Dictionary<string, object>;
+            if (optionsDict != null)
+            {
+                if (optionsDict.TryGetValue("N", out var nValue))
+                    N = Convert.ToInt32(nValue);
+                if (optionsDict.TryGetValue("cost", out var costValue))
+                    N = Convert.ToInt32(costValue);
+                if (optionsDict.TryGetValue("r", out var rValue))
+                    r = Convert.ToInt32(rValue);
+                if (optionsDict.TryGetValue("blockSize", out var blockSizeValue))
+                    r = Convert.ToInt32(blockSizeValue);
+                if (optionsDict.TryGetValue("p", out var pValue))
+                    p = Convert.ToInt32(pValue);
+                if (optionsDict.TryGetValue("parallelization", out var parallelizationValue))
+                    p = Convert.ToInt32(parallelizationValue);
+            }
+        }
+
+        return SCrypt.Generate(password, salt, N, r, p, keylen);
     }
 
     /// <summary>
@@ -286,7 +324,10 @@ public static partial class crypto
     {
         return new[]
         {
-            "secp256r1", "secp384r1", "secp521r1"
+            "secp256r1", "secp384r1", "secp521r1",
+            "secp256k1",
+            "ed25519", "ed448",
+            "x25519", "x448"
         };
     }
 
@@ -408,7 +449,24 @@ public static partial class crypto
         }
         else if (keyType == "ed25519" || keyType == "ed448" || keyType == "x25519" || keyType == "x448")
         {
-            throw new NotImplementedException($"Key generation for {type} is not yet implemented");
+            // Generate EdDSA key pair using BouncyCastle
+            var algorithm = keyType switch
+            {
+                "ed25519" => "Ed25519",
+                "ed448" => "Ed448",
+                "x25519" => "X25519",
+                "x448" => "X448",
+                _ => throw new ArgumentException($"Unknown key type: {type}")
+            };
+
+            var keyPairGenerator = GeneratorUtilities.GetKeyPairGenerator(algorithm);
+            keyPairGenerator.Init(new KeyGenerationParameters(new SecureRandom(), 256));
+            var bcKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            var publicKey = new EdDSAPublicKeyObject(bcKeyPair.Public, keyType);
+            var privateKey = new EdDSAPrivateKeyObject(bcKeyPair.Private, keyType);
+
+            return (publicKey, privateKey);
         }
         else if (keyType == "dsa")
         {
@@ -797,18 +855,13 @@ public static partial class crypto
     public static DiffieHellman getDiffieHellman(string groupName)
     {
         // Predefined DH groups from RFC 3526 and RFC 2409
-        return groupName.ToLowerInvariant() switch
+        if (!MODPGroups.IsValidGroup(groupName))
         {
-            "modp1" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp2" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp5" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp14" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp15" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp16" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp17" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            "modp18" => throw new NotImplementedException("Predefined DH groups not yet implemented"),
-            _ => throw new ArgumentException($"Unknown DH group: {groupName}")
-        };
+            throw new ArgumentException($"Unknown DH group: {groupName}");
+        }
+
+        var (prime, generator) = MODPGroups.GetGroup(groupName);
+        return new DiffieHellman(prime, generator);
     }
 
     /// <summary>

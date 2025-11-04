@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Org.BouncyCastle.Crypto.Digests;
 
 namespace Tsonic.NodeApi;
 
@@ -133,15 +134,15 @@ public class Hash : Transform
             "sha512" or "sha-512" => SHA512.Create(),
             "sha512-224" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
             "sha512-256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "sha3-224" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "sha3-256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "sha3-384" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "sha3-512" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
+            "sha3-224" => new BouncyCastleHashAlgorithm(new Sha3Digest(224)),
+            "sha3-256" => new BouncyCastleHashAlgorithm(new Sha3Digest(256)),
+            "sha3-384" => new BouncyCastleHashAlgorithm(new Sha3Digest(384)),
+            "sha3-512" => new BouncyCastleHashAlgorithm(new Sha3Digest(512)),
             "shake128" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
             "shake256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "ripemd160" or "rmd160" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "blake2b512" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
-            "blake2s256" => throw new NotImplementedException($"Algorithm {algorithm} is not implemented"),
+            "ripemd160" or "rmd160" => new BouncyCastleHashAlgorithm(new RipeMD160Digest()),
+            "blake2b512" => new BouncyCastleHashAlgorithm(new Blake2bDigest(512)),
+            "blake2s256" => new BouncyCastleHashAlgorithm(new Blake2sDigest(256)),
             _ => throw new ArgumentException($"Unknown hash algorithm: {algorithm}")
         };
     }
@@ -158,5 +159,47 @@ public class Hash : Transform
             "hex" => Encoding.ASCII, // Hex is ASCII-based
             _ => Encoding.UTF8
         };
+    }
+}
+
+/// <summary>
+/// Wrapper to adapt BouncyCastle IDigest to .NET HashAlgorithm.
+/// </summary>
+internal class BouncyCastleHashAlgorithm : HashAlgorithm
+{
+    private readonly Org.BouncyCastle.Crypto.IDigest _digest;
+    private byte[]? _hashValue;
+
+    public BouncyCastleHashAlgorithm(Org.BouncyCastle.Crypto.IDigest digest)
+    {
+        _digest = digest;
+        HashSizeValue = digest.GetDigestSize() * 8;
+    }
+
+    public override void Initialize()
+    {
+        _digest.Reset();
+        _hashValue = null;
+    }
+
+    protected override void HashCore(byte[] array, int ibStart, int cbSize)
+    {
+        _digest.BlockUpdate(array, ibStart, cbSize);
+    }
+
+    protected override byte[] HashFinal()
+    {
+        _hashValue = new byte[_digest.GetDigestSize()];
+        _digest.DoFinal(_hashValue, 0);
+        return _hashValue;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _digest.Reset();
+        }
+        base.Dispose(disposing);
     }
 }

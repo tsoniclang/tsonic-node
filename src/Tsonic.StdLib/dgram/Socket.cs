@@ -339,6 +339,57 @@ public class DgramSocket : EventEmitter
     }
 
     /// <summary>
+    /// Broadcasts a datagram on the socket with offset and length.
+    /// </summary>
+    /// <param name="msg">Buffer containing the message</param>
+    /// <param name="offset">Offset in the buffer where the message starts</param>
+    /// <param name="length">Number of bytes in the message</param>
+    /// <param name="port">Destination port</param>
+    /// <param name="address">Destination address</param>
+    /// <param name="callback">Called when message has been sent</param>
+    public void send(byte[] msg, int offset, int length, int? port = null, string? address = null, Action<Exception?, int>? callback = null)
+    {
+        if (offset < 0 || offset >= msg.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Offset must be within buffer bounds");
+        }
+        if (length < 0 || offset + length > msg.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), "Length must be within buffer bounds");
+        }
+
+        // Extract the slice
+        var slice = new byte[length];
+        Array.Copy(msg, offset, slice, 0, length);
+        send(slice, port, address, callback);
+    }
+
+    /// <summary>
+    /// Broadcasts a datagram on the socket with offset and length to a specified port.
+    /// </summary>
+    /// <param name="msg">Buffer containing the message</param>
+    /// <param name="offset">Offset in the buffer where the message starts</param>
+    /// <param name="length">Number of bytes in the message</param>
+    /// <param name="port">Destination port</param>
+    /// <param name="callback">Called when message has been sent</param>
+    public void send(byte[] msg, int offset, int length, int port, Action<Exception?, int>? callback)
+    {
+        send(msg, offset, length, port, null, callback);
+    }
+
+    /// <summary>
+    /// Broadcasts a datagram on the socket with offset and length (must be connected).
+    /// </summary>
+    /// <param name="msg">Buffer containing the message</param>
+    /// <param name="offset">Offset in the buffer where the message starts</param>
+    /// <param name="length">Number of bytes in the message</param>
+    /// <param name="callback">Called when message has been sent</param>
+    public void send(byte[] msg, int offset, int length, Action<Exception?, int>? callback)
+    {
+        send(msg, offset, length, null, null, callback);
+    }
+
+    /// <summary>
     /// Sets or clears the SO_BROADCAST socket option.
     /// </summary>
     /// <param name="flag">Enable or disable broadcast</param>
@@ -431,6 +482,148 @@ public class DgramSocket : EventEmitter
 
         var groupAddress = IPAddress.Parse(multicastAddress);
         _socket.DropMulticastGroup(groupAddress);
+    }
+
+    /// <summary>
+    /// Sets the default outgoing multicast interface of the socket.
+    /// </summary>
+    /// <param name="multicastInterface">IP address of the multicast interface</param>
+    public void setMulticastInterface(string multicastInterface)
+    {
+        if (_socket == null || !_isBound)
+        {
+            throw new InvalidOperationException("Socket is not bound");
+        }
+
+        var interfaceAddress = IPAddress.Parse(multicastInterface);
+
+        if (_type == "udp4")
+        {
+            var bytes = interfaceAddress.GetAddressBytes();
+            var addressValue = BitConverter.ToInt32(bytes, 0);
+            _socket.Client.SetSocketOption(
+                SocketOptionLevel.IP,
+                SocketOptionName.MulticastInterface,
+                addressValue
+            );
+        }
+        else
+        {
+            var index = BitConverter.ToInt32(interfaceAddress.GetAddressBytes(), 0);
+            _socket.Client.SetSocketOption(
+                SocketOptionLevel.IPv6,
+                SocketOptionName.MulticastInterface,
+                index
+            );
+        }
+    }
+
+    /// <summary>
+    /// Sets the IP_TTL socket option.
+    /// </summary>
+    /// <param name="ttl">TTL value (1-255)</param>
+    /// <returns>The TTL value</returns>
+    public int setTTL(int ttl)
+    {
+        if (_socket == null || !_isBound)
+        {
+            throw new InvalidOperationException("Socket is not bound");
+        }
+
+        if (ttl < 1 || ttl > 255)
+        {
+            throw new ArgumentException("TTL must be between 1 and 255");
+        }
+
+        _socket.Client.SetSocketOption(
+            SocketOptionLevel.IP,
+            SocketOptionName.IpTimeToLive,
+            ttl
+        );
+
+        return ttl;
+    }
+
+    /// <summary>
+    /// Gets the number of bytes queued for sending.
+    /// Note: This is not available in .NET UdpClient, returns 0.
+    /// </summary>
+    /// <returns>Number of bytes queued (always 0 in .NET)</returns>
+    public int getSendQueueSize()
+    {
+        // Not available in .NET UdpClient
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets the number of send requests currently in the queue.
+    /// Note: This is not available in .NET UdpClient, returns 0.
+    /// </summary>
+    /// <returns>Number of send requests (always 0 in .NET)</returns>
+    public int getSendQueueCount()
+    {
+        // Not available in .NET UdpClient
+        return 0;
+    }
+
+    /// <summary>
+    /// Adds the socket back to reference counting.
+    /// Note: Not applicable in .NET, this is a no-op for API compatibility.
+    /// </summary>
+    /// <returns>This socket instance</returns>
+    public DgramSocket @ref()
+    {
+        // Not applicable in .NET - no-op for compatibility
+        return this;
+    }
+
+    /// <summary>
+    /// Excludes the socket from reference counting.
+    /// Note: Not applicable in .NET, this is a no-op for API compatibility.
+    /// </summary>
+    /// <returns>This socket instance</returns>
+    public DgramSocket unref()
+    {
+        // Not applicable in .NET - no-op for compatibility
+        return this;
+    }
+
+    /// <summary>
+    /// Tells the kernel to join a source-specific multicast channel.
+    /// </summary>
+    /// <param name="sourceAddress">Source address</param>
+    /// <param name="groupAddress">Multicast group address</param>
+    /// <param name="multicastInterface">Interface address</param>
+    public void addSourceSpecificMembership(string sourceAddress, string groupAddress, string? multicastInterface = null)
+    {
+        if (_socket == null)
+        {
+            // Auto-bind if not bound
+            bind();
+        }
+
+        var source = IPAddress.Parse(sourceAddress);
+        var group = IPAddress.Parse(groupAddress);
+
+        // Note: .NET doesn't have direct SSM support, but we can use IP_ADD_SOURCE_MEMBERSHIP socket option
+        throw new NotSupportedException("Source-specific multicast is not fully supported in .NET UdpClient");
+    }
+
+    /// <summary>
+    /// Instructs the kernel to leave a source-specific multicast channel.
+    /// </summary>
+    /// <param name="sourceAddress">Source address</param>
+    /// <param name="groupAddress">Multicast group address</param>
+    /// <param name="multicastInterface">Interface address</param>
+    public void dropSourceSpecificMembership(string sourceAddress, string groupAddress, string? multicastInterface = null)
+    {
+        if (_socket == null || !_isBound)
+        {
+            throw new InvalidOperationException("Socket is not bound");
+        }
+
+        // Note: .NET doesn't have direct SSM support
+        throw new NotSupportedException("Source-specific multicast is not fully supported in .NET UdpClient");
     }
 
     /// <summary>

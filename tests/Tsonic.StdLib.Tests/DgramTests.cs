@@ -362,4 +362,161 @@ public class DgramTests
         Assert.Throws<InvalidOperationException>(() => socket.remoteAddress());
         socket.close();
     }
+
+    [Fact]
+    public void Send_WithOffsetAndLength_SendsCorrectSlice()
+    {
+        var server = dgram.createSocket("udp4");
+        byte[]? receivedData = null;
+
+        server.on("message", (Action<byte[], RemoteInfo>)((data, rinfo) =>
+        {
+            receivedData = data;
+        }));
+
+        server.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var addr = server.address();
+        var client = dgram.createSocket("udp4");
+
+        var buffer = Encoding.UTF8.GetBytes("HelloWorld");
+        client.send(buffer, 5, 5, addr.port, "127.0.0.1");
+
+        Thread.Sleep(200);
+
+        Assert.NotNull(receivedData);
+        Assert.Equal("World", Encoding.UTF8.GetString(receivedData!));
+
+        client.close();
+        server.close();
+    }
+
+    [Fact]
+    public void Send_WithInvalidOffset_ThrowsException()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var buffer = new byte[10];
+        Assert.Throws<ArgumentOutOfRangeException>(() => socket.send(buffer, 15, 5, 1234, "127.0.0.1"));
+
+        socket.close();
+    }
+
+    [Fact]
+    public void Send_WithInvalidLength_ThrowsException()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var buffer = new byte[10];
+        Assert.Throws<ArgumentOutOfRangeException>(() => socket.send(buffer, 5, 10, 1234, "127.0.0.1"));
+
+        socket.close();
+    }
+
+    [Fact]
+    public void SetTTL_SetsTTL()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var result = socket.setTTL(128);
+        Assert.Equal(128, result);
+
+        socket.close();
+    }
+
+    [Fact]
+    public void SetTTL_InvalidValue_ThrowsException()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        Assert.Throws<ArgumentException>(() => socket.setTTL(0));
+        Assert.Throws<ArgumentException>(() => socket.setTTL(256));
+
+        socket.close();
+    }
+
+    [Fact]
+    public void GetSendQueueSize_ReturnsZero()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var size = socket.getSendQueueSize();
+        Assert.Equal(0, size);
+
+        socket.close();
+    }
+
+    [Fact]
+    public void GetSendQueueCount_ReturnsZero()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var count = socket.getSendQueueCount();
+        Assert.Equal(0, count);
+
+        socket.close();
+    }
+
+    [Fact]
+    public void Ref_ReturnsSocket()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var result = socket.@ref();
+        Assert.Same(socket, result);
+
+        socket.close();
+    }
+
+    [Fact]
+    public void Unref_ReturnsSocket()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "127.0.0.1");
+        Thread.Sleep(100);
+
+        var result = socket.unref();
+        Assert.Same(socket, result);
+
+        socket.close();
+    }
+
+    [Fact]
+    public void AddSourceSpecificMembership_ThrowsNotSupported()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "0.0.0.0");
+        Thread.Sleep(100);
+
+        Assert.Throws<NotSupportedException>(() => socket.addSourceSpecificMembership("192.168.1.1", "224.0.0.1"));
+
+        socket.close();
+    }
+
+    [Fact]
+    public void DropSourceSpecificMembership_ThrowsNotSupported()
+    {
+        var socket = dgram.createSocket("udp4");
+        socket.bind(0, "0.0.0.0");
+        Thread.Sleep(100);
+
+        Assert.Throws<NotSupportedException>(() => socket.dropSourceSpecificMembership("192.168.1.1", "224.0.0.1"));
+
+        socket.close();
+    }
 }

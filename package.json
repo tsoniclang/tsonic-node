@@ -14,11 +14,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "dotnet build",
-    "pack": "dotnet pack src/Tsonic.Node/Tsonic.Node.csproj -c Release"
+    "pack": "dotnet pack src/nodejs/nodejs.csproj -c Release"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tsoniclang/tsonic-node.git"
+    "url": "git+https://github.com/tsoniclang/nodejs-clr.git"
   },
   "keywords": [
     "tsonic",
@@ -31,9 +31,9 @@
   "author": "tsoniclang",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tsoniclang/tsonic-node/issues"
+    "url": "https://github.com/tsoniclang/nodejs-clr/issues"
   },
-  "homepage": "https://github.com/tsoniclang/tsonic-node#readme",
+  "homepage": "https://github.com/tsoniclang/nodejs-clr#readme",
   "devDependencies": {
     "@types/node": "^24.10.0"
   }

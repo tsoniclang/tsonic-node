@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const api = JSON.parse(fs.readFileSync(path.join(__dirname, 'tsonic-node-api.json'), 'utf-8'));
+const api = JSON.parse(fs.readFileSync(path.join(__dirname, 'nodejs-clr-api.json'), 'utf-8'));
 
 const report = [];
 
@@ -179,7 +179,7 @@ const suspectApis = [
   { module: 'path', method: 'matchesGlob' },
 ];
 
-report.push('\nThese methods were found in Tsonic.Node but may not exist in standard Node.js:\n');
+report.push('\nThese methods were found in nodejs but may not exist in standard Node.js:\n');
 for (const { module: moduleName, method: methodName } of suspectApis) {
   const module = staticModules[moduleName];
   if (module) {

@@ -146,6 +146,9 @@ public class Server : EventEmitter
                         else
                         {
                             emit("connection", socket);
+                            // Start reading AFTER emitting connection event
+                            // This allows the connection handler to register data listeners first
+                            socket.StartReading();
                         }
                     }
                     catch (SocketException)

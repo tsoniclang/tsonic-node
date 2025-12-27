@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace nodejs;
@@ -19,8 +22,19 @@ public class Socket : Stream
     private NetworkStream? _stream;
     private bool _connecting = false;
     private bool _destroyed = false;
+    private bool _reading = false;
+    private bool _paused = false;
     private int _timeout = 0;
     private bool _allowHalfOpen = false;
+
+    // Write queue for FIFO ordering (like Node.js)
+    private readonly BlockingCollection<WriteRequest> _writeQueue = new BlockingCollection<WriteRequest>();
+    private Task? _writeLoopTask;
+    private bool _writeLoopStarted = false;
+    private readonly object _writeLoopLock = new object();
+    private readonly ManualResetEventSlim _writeQueueEmpty = new ManualResetEventSlim(true);
+
+    private record WriteRequest(byte[] Data, Action<Exception?>? Callback);
 
     /// <summary>
     /// The amount of received bytes.
@@ -108,6 +122,8 @@ public class Socket : Stream
         _client = client;
         _stream = client.GetStream();
         UpdateAddressInfo();
+        // Don't start reading immediately - let the connection callback register handlers first
+        // StartReading will be called after emitting the connection event
     }
 
     /// <summary>
@@ -138,6 +154,7 @@ public class Socket : Stream
                 UpdateAddressInfo();
                 emit("connect");
                 emit("ready");
+                StartReading();
             }
             catch (Exception ex)
             {
@@ -186,23 +203,64 @@ public class Socket : Stream
             return false;
         }
 
-        Task.Run(async () =>
+        // Queue the write request for FIFO processing (like Node.js)
+        _writeQueueEmpty.Reset();
+        _writeQueue.Add(new WriteRequest(data, callback));
+
+        // Start the write loop if not already running
+        StartWriteLoop();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Starts the write loop that processes queued writes in FIFO order.
+    /// </summary>
+    private void StartWriteLoop()
+    {
+        lock (_writeLoopLock)
+        {
+            if (_writeLoopStarted) return;
+            _writeLoopStarted = true;
+        }
+
+        _writeLoopTask = Task.Run(async () =>
         {
             try
             {
-                await _stream.WriteAsync(data, 0, data.Length);
-                bytesWritten += data.Length;
-                callback?.Invoke(null);
-                emit("drain");
+                foreach (var request in _writeQueue.GetConsumingEnumerable())
+                {
+                    if (_destroyed || _stream == null) break;
+
+                    try
+                    {
+                        await _stream.WriteAsync(request.Data, 0, request.Data.Length);
+                        bytesWritten += request.Data.Length;
+                        request.Callback?.Invoke(null);
+                        emit("drain");
+                    }
+                    catch (Exception ex)
+                    {
+                        request.Callback?.Invoke(ex);
+                        emit("error", ex);
+                    }
+
+                    // Signal if queue is empty
+                    if (_writeQueue.Count == 0)
+                    {
+                        _writeQueueEmpty.Set();
+                    }
+                }
             }
-            catch (Exception ex)
+            catch (InvalidOperationException)
             {
-                callback?.Invoke(ex);
-                emit("error", ex);
+                // Queue was completed, this is expected during shutdown
+            }
+            finally
+            {
+                _writeQueueEmpty.Set();
             }
         });
-
-        return true;
     }
 
     /// <summary>
@@ -227,9 +285,19 @@ public class Socket : Stream
     {
         if (_stream != null && !_destroyed)
         {
-            _stream.Close();
-            emit("end");
-            callback?.Invoke();
+            // Wait for pending writes to complete before closing (like Node.js)
+            Task.Run(() =>
+            {
+                // Wait for write queue to be empty with timeout
+                _writeQueueEmpty.Wait(TimeSpan.FromSeconds(30));
+
+                // Complete the write queue to stop the write loop
+                _writeQueue.CompleteAdding();
+
+                _stream?.Close();
+                emit("end");
+                callback?.Invoke();
+            });
         }
         return this;
     }
@@ -322,7 +390,7 @@ public class Socket : Stream
     /// <returns>The socket itself</returns>
     public Socket pause()
     {
-        // Pause would be implemented with full stream support
+        _paused = true;
         return this;
     }
 
@@ -332,7 +400,7 @@ public class Socket : Stream
     /// <returns>The socket itself</returns>
     public Socket resume()
     {
-        // Resume would be implemented with full stream support
+        _paused = false;
         return this;
     }
 
@@ -424,6 +492,85 @@ public class Socket : Stream
     {
         // Not applicable in .NET managed context
         return this;
+    }
+
+    /// <summary>
+    /// Starts the asynchronous read loop to emit "data" events.
+    /// Called internally after the connection event is emitted to allow handlers to be registered first.
+    /// </summary>
+    internal void StartReading()
+    {
+        if (_reading || _stream == null) return;
+        _reading = true;
+
+        Task.Run(async () =>
+        {
+            var buffer = new byte[65536]; // 64KB buffer
+            try
+            {
+                while (!_destroyed && _stream != null && _client?.Connected == true)
+                {
+                    // Wait while paused
+                    while (_paused && !_destroyed)
+                    {
+                        await Task.Delay(10);
+                    }
+
+                    if (_destroyed) break;
+
+                    int bytesReadCount;
+                    try
+                    {
+                        bytesReadCount = await _stream.ReadAsync(buffer, 0, buffer.Length);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Stream was closed
+                        break;
+                    }
+                    catch (System.IO.IOException)
+                    {
+                        // Connection reset or closed
+                        break;
+                    }
+
+                    if (bytesReadCount == 0)
+                    {
+                        // End of stream - connection closed by remote
+                        emit("end");
+                        if (!_allowHalfOpen)
+                        {
+                            end();
+                        }
+                        break;
+                    }
+
+                    bytesRead += bytesReadCount;
+
+                    // Create a Buffer with the received data
+                    var data = new byte[bytesReadCount];
+                    System.Array.Copy(buffer, 0, data, 0, bytesReadCount);
+                    var nodeBuffer = Buffer.from(data);
+
+                    emit("data", nodeBuffer);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!_destroyed)
+                {
+                    emit("error", ex);
+                }
+            }
+            finally
+            {
+                _reading = false;
+                if (!_destroyed)
+                {
+                    emit("close", false);
+                }
+            }
+        });
     }
 
     private void UpdateAddressInfo()

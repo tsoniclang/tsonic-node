@@ -429,7 +429,7 @@ public class TLSSocket : Socket
     /// <summary>
     /// Reads data from the TLS stream.
     /// </summary>
-    public void StartReading()
+    internal new void StartReading()
     {
         if (_sslStream == null || !_sslStream.CanRead)
             return;

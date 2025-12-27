@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace nodejs;
@@ -23,6 +25,8 @@ public class Socket : Stream
     private bool _paused = false;
     private int _timeout = 0;
     private bool _allowHalfOpen = false;
+    private int _pendingWrites = 0;
+    private readonly object _writeLock = new object();
 
     /// <summary>
     /// The amount of received bytes.
@@ -110,7 +114,8 @@ public class Socket : Stream
         _client = client;
         _stream = client.GetStream();
         UpdateAddressInfo();
-        StartReading();
+        // Don't start reading immediately - let the connection callback register handlers first
+        // StartReading will be called after emitting the connection event
     }
 
     /// <summary>
@@ -190,6 +195,8 @@ public class Socket : Stream
             return false;
         }
 
+        Interlocked.Increment(ref _pendingWrites);
+
         Task.Run(async () =>
         {
             try
@@ -203,6 +210,10 @@ public class Socket : Stream
             {
                 callback?.Invoke(ex);
                 emit("error", ex);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _pendingWrites);
             }
         });
 
@@ -231,9 +242,20 @@ public class Socket : Stream
     {
         if (_stream != null && !_destroyed)
         {
-            _stream.Close();
-            emit("end");
-            callback?.Invoke();
+            // Wait for pending writes to complete before closing
+            Task.Run(async () =>
+            {
+                // Wait for pending writes with a timeout
+                var maxWait = 100; // 10 seconds max (100 * 100ms)
+                while (_pendingWrites > 0 && maxWait > 0)
+                {
+                    await Task.Delay(100);
+                    maxWait--;
+                }
+                _stream?.Close();
+                emit("end");
+                callback?.Invoke();
+            });
         }
         return this;
     }
@@ -432,8 +454,9 @@ public class Socket : Stream
 
     /// <summary>
     /// Starts the asynchronous read loop to emit "data" events.
+    /// Called internally after the connection event is emitted to allow handlers to be registered first.
     /// </summary>
-    private void StartReading()
+    internal void StartReading()
     {
         if (_reading || _stream == null) return;
         _reading = true;

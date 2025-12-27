@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -25,8 +26,15 @@ public class Socket : Stream
     private bool _paused = false;
     private int _timeout = 0;
     private bool _allowHalfOpen = false;
-    private int _pendingWrites = 0;
-    private readonly object _writeLock = new object();
+
+    // Write queue for FIFO ordering (like Node.js)
+    private readonly BlockingCollection<WriteRequest> _writeQueue = new BlockingCollection<WriteRequest>();
+    private Task? _writeLoopTask;
+    private bool _writeLoopStarted = false;
+    private readonly object _writeLoopLock = new object();
+    private readonly ManualResetEventSlim _writeQueueEmpty = new ManualResetEventSlim(true);
+
+    private record WriteRequest(byte[] Data, Action<Exception?>? Callback);
 
     /// <summary>
     /// The amount of received bytes.
@@ -195,29 +203,64 @@ public class Socket : Stream
             return false;
         }
 
-        Interlocked.Increment(ref _pendingWrites);
+        // Queue the write request for FIFO processing (like Node.js)
+        _writeQueueEmpty.Reset();
+        _writeQueue.Add(new WriteRequest(data, callback));
 
-        Task.Run(async () =>
+        // Start the write loop if not already running
+        StartWriteLoop();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Starts the write loop that processes queued writes in FIFO order.
+    /// </summary>
+    private void StartWriteLoop()
+    {
+        lock (_writeLoopLock)
+        {
+            if (_writeLoopStarted) return;
+            _writeLoopStarted = true;
+        }
+
+        _writeLoopTask = Task.Run(async () =>
         {
             try
             {
-                await _stream.WriteAsync(data, 0, data.Length);
-                bytesWritten += data.Length;
-                callback?.Invoke(null);
-                emit("drain");
+                foreach (var request in _writeQueue.GetConsumingEnumerable())
+                {
+                    if (_destroyed || _stream == null) break;
+
+                    try
+                    {
+                        await _stream.WriteAsync(request.Data, 0, request.Data.Length);
+                        bytesWritten += request.Data.Length;
+                        request.Callback?.Invoke(null);
+                        emit("drain");
+                    }
+                    catch (Exception ex)
+                    {
+                        request.Callback?.Invoke(ex);
+                        emit("error", ex);
+                    }
+
+                    // Signal if queue is empty
+                    if (_writeQueue.Count == 0)
+                    {
+                        _writeQueueEmpty.Set();
+                    }
+                }
             }
-            catch (Exception ex)
+            catch (InvalidOperationException)
             {
-                callback?.Invoke(ex);
-                emit("error", ex);
+                // Queue was completed, this is expected during shutdown
             }
             finally
             {
-                Interlocked.Decrement(ref _pendingWrites);
+                _writeQueueEmpty.Set();
             }
         });
-
-        return true;
     }
 
     /// <summary>
@@ -242,16 +285,15 @@ public class Socket : Stream
     {
         if (_stream != null && !_destroyed)
         {
-            // Wait for pending writes to complete before closing
-            Task.Run(async () =>
+            // Wait for pending writes to complete before closing (like Node.js)
+            Task.Run(() =>
             {
-                // Wait for pending writes with a timeout
-                var maxWait = 100; // 10 seconds max (100 * 100ms)
-                while (_pendingWrites > 0 && maxWait > 0)
-                {
-                    await Task.Delay(100);
-                    maxWait--;
-                }
+                // Wait for write queue to be empty with timeout
+                _writeQueueEmpty.Wait(TimeSpan.FromSeconds(30));
+
+                // Complete the write queue to stop the write loop
+                _writeQueue.CompleteAdding();
+
                 _stream?.Close();
                 emit("end");
                 callback?.Invoke();

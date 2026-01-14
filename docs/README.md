@@ -13,12 +13,29 @@ This is **not** Node.js itself, and it is **not a byte-for-byte clone** of the N
 
 ### Modules
 
-3. [`path`](modules/path.md)
-4. [`fs`](modules/fs.md)
-5. [`events`](modules/events.md)
-6. [`crypto`](modules/crypto.md)
-7. [`process`](modules/process.md)
-8. [`http`](modules/http.md) (separate submodule)
+3. [`console`](modules/console.md)
+4. [`path`](modules/path.md)
+5. [`fs`](modules/fs.md)
+6. [`Buffer`](modules/buffer.md)
+7. [`events`](modules/events.md)
+8. [`timers`](modules/timers.md)
+9. [`process`](modules/process.md)
+10. [`os`](modules/os.md)
+11. [`util`](modules/util.md)
+12. [`assert`](modules/assert.md)
+13. [`performance`](modules/performance.md)
+14. [`stream`](modules/stream.md)
+15. [`readline`](modules/readline.md)
+16. [`querystring`](modules/querystring.md)
+17. [`zlib`](modules/zlib.md)
+18. [`crypto`](modules/crypto.md)
+19. [`tls`](modules/tls.md)
+20. [`X509 / Certificate`](modules/x509.md)
+21. [`dns`](modules/dns.md)
+22. [`net`](modules/net.md)
+23. [`dgram`](modules/dgram.md)
+24. [`child_process`](modules/child_process.md)
+25. [`http`](modules/http.md) (separate submodule)
 
 ## Overview
 

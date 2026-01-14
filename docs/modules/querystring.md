@@ -18,3 +18,19 @@ export function main(): void {
 }
 ```
 
+## API Reference
+
+<!-- API:START -->
+### `querystring`
+
+```ts
+export declare const querystring: {
+  decode(str: string, sep?: string, eq?: string, maxKeys?: int): Dictionary<System_Internal.String, unknown>;
+  encode(obj: Dictionary<System_Internal.String, unknown>, sep?: string, eq?: string): string;
+  escape(str: string): string;
+  parse(str: string, sep?: string, eq?: string, maxKeys?: int): Dictionary<System_Internal.String, unknown>;
+  stringify(obj: Dictionary<System_Internal.String, unknown>, sep?: string, eq?: string): string;
+  unescape(str: string): string;
+};
+```
+<!-- API:END -->

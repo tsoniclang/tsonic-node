@@ -3,13 +3,13 @@
 Import:
 
 ```ts
-import { path } from "@tsonic/nodejs";
+import { path } from "@tsonic/nodejs/index.js";
 ```
 
 Examples:
 
 ```ts
-import { console, path } from "@tsonic/nodejs";
+import { console, path } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   console.log(path.join("a", "b", "c"));
@@ -18,4 +18,3 @@ export function main(): void {
   console.log(path.dirname("/tmp/file.txt"));
 }
 ```
-

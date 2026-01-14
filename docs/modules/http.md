@@ -11,7 +11,7 @@ import { http, IncomingMessage, ServerResponse } from "@tsonic/nodejs/nodejs.Htt
 Example:
 
 ```ts
-import { console } from "@tsonic/nodejs";
+import { console } from "@tsonic/nodejs/index.js";
 import { http, IncomingMessage, ServerResponse } from "@tsonic/nodejs/nodejs.Http.js";
 import { Thread, Timeout } from "@tsonic/dotnet/System.Threading.js";
 
@@ -30,4 +30,3 @@ export function main(): void {
   Thread.sleep(Timeout.infinite);
 }
 ```
-

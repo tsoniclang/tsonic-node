@@ -16,10 +16,10 @@ tsonic project init --nodejs
 tsonic add nodejs
 ```
 
-Then import Node-style modules from `@tsonic/nodejs`:
+Then import Node-style modules from `@tsonic/nodejs/index.js`:
 
 ```ts
-import { console, fs, path } from "@tsonic/nodejs";
+import { console, fs, path } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   console.log(path.join("a", "b", "c"));
@@ -57,4 +57,3 @@ The `@tsonic/nodejs` package is generated from the compiled assembly via **tsbin
 ## License
 
 MIT
-

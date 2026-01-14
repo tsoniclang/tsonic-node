@@ -1,17 +1,17 @@
 # Importing Modules
 
-## Importing from `@tsonic/nodejs`
+## Importing from `@tsonic/nodejs/index.js`
 
-Most Node-style modules are exported as named values from the package root:
+Most Node-style modules are exported as named values from the package root entry point:
 
 ```ts
-import { console, fs, path, process, crypto } from "@tsonic/nodejs";
+import { console, fs, path, process, crypto } from "@tsonic/nodejs/index.js";
 ```
 
-Types that are part of those modules are also exported from the root:
+Types that are part of those modules are also exported from the root entry point:
 
 ```ts
-import { EventEmitter } from "@tsonic/nodejs";
+import { EventEmitter } from "@tsonic/nodejs/index.js";
 ```
 
 ## Importing submodules (namespaces)
@@ -32,10 +32,9 @@ import * as fs from "fs";
 import * as path from "path";
 ```
 
-Instead import from `@tsonic/nodejs`:
+Instead import from `@tsonic/nodejs/index.js`:
 
 ```ts
 // ✅ Supported
-import { fs, path } from "@tsonic/nodejs";
+import { fs, path } from "@tsonic/nodejs/index.js";
 ```
-

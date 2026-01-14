@@ -3,13 +3,13 @@
 Import:
 
 ```ts
-import { fs } from "@tsonic/nodejs";
+import { fs } from "@tsonic/nodejs/index.js";
 ```
 
 Examples:
 
 ```ts
-import { console, fs } from "@tsonic/nodejs";
+import { console, fs } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   const file = "./README.md";
@@ -25,4 +25,3 @@ export function main(): void {
   fs.writeFileSync("./out.txt", "Hello from Tsonic!");
 }
 ```
-

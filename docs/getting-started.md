@@ -23,7 +23,7 @@ That will:
 ## Minimal Example
 
 ```ts
-import { console, fs, path } from "@tsonic/nodejs";
+import { console, fs, path } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   const fullPath = path.join("src", "App.ts");
@@ -39,4 +39,3 @@ export function main(): void {
 
 - Tsonic is ESM-first. Import submodules with `.js` when you use a subpath (example: `@tsonic/nodejs/nodejs.Http.js`).
 - This library is Node-inspired, but many APIs intentionally follow .NET behavior where it improves ergonomics.
-

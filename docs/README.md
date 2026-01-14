@@ -9,7 +9,7 @@ This is **not** Node.js itself, and it is **not a byte-for-byte clone** of the N
 ### Getting Started
 
 1. [Getting Started](getting-started.md) - enable `@tsonic/nodejs` in a Tsonic project
-2. [Importing Modules](imports.md) - what to import from `@tsonic/nodejs` vs submodules
+2. [Importing Modules](imports.md) - what to import from `@tsonic/nodejs/index.js` vs submodules
 
 ### Modules
 
@@ -22,10 +22,10 @@ This is **not** Node.js itself, and it is **not a byte-for-byte clone** of the N
 
 ## Overview
 
-In Tsonic projects you import Node-style APIs from the `@tsonic/nodejs` package:
+In Tsonic projects you import Node-style APIs from `@tsonic/nodejs/index.js`:
 
 ```ts
-import { console, fs, path } from "@tsonic/nodejs";
+import { console, fs, path } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   console.log(path.join("a", "b", "c"));
@@ -46,4 +46,3 @@ import { http } from "@tsonic/nodejs/nodejs.Http.js";
 - `@tsonic/nodejs` provides Node-style APIs (e.g. `fs`, `path`, `crypto`, `http`).
 
 You can enable either or both in a project.
-

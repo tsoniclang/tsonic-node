@@ -3,13 +3,13 @@
 Import:
 
 ```ts
-import { process } from "@tsonic/nodejs";
+import { process } from "@tsonic/nodejs/index.js";
 ```
 
 Example:
 
 ```ts
-import { console, process } from "@tsonic/nodejs";
+import { console, process } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
   console.log(`pid: ${process.pid}`);
@@ -17,4 +17,3 @@ export function main(): void {
   console.log(`cwd: ${process.cwd()}`);
 }
 ```
-

@@ -1,0 +1,21 @@
+# `path`
+
+Import:
+
+```ts
+import { path } from "@tsonic/nodejs";
+```
+
+Examples:
+
+```ts
+import { console, path } from "@tsonic/nodejs";
+
+export function main(): void {
+  console.log(path.join("a", "b", "c"));
+  console.log(path.basename("/tmp/file.txt"));
+  console.log(path.extname("index.html"));
+  console.log(path.dirname("/tmp/file.txt"));
+}
+```
+

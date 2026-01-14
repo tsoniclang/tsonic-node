@@ -17,3 +17,21 @@ export function main(): void {
 }
 ```
 
+## API Reference
+
+<!-- API:START -->
+### `util`
+
+```ts
+export declare const util: {
+  debuglog(section: string): DebugLogFunction;
+  deprecate<TResult>(fn: Func<TResult>, msg: string, code?: string): Func<TResult>;
+  deprecate(action: Action, msg: string, code?: string): Action;
+  format(format: unknown, ...args: unknown[]): string;
+  inherits(constructor_: unknown, superConstructor: unknown): void;
+  inspect(obj: unknown): string;
+  isArray(obj: unknown): boolean;
+  isDeepStrictEqual(val1: unknown, val2: unknown): boolean;
+};
+```
+<!-- API:END -->

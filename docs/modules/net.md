@@ -38,10 +38,10 @@ export const AddressInfo: {
 
 ```ts
 export interface BlockList {
-    addAddress(address: string, type_?: string): void;
-    addRange(start: string, end: string, type_?: string): void;
-    addSubnet(network: string, prefix: int, type_?: string): void;
-    check(address: string, type_?: string): boolean;
+    addAddress(address: string, type?: string): void;
+    addRange(start: string, end: string, type?: string): void;
+    addSubnet(network: string, prefix: int, type?: string): void;
+    check(address: string, type?: string): boolean;
     getRules(): string[];
 }
 

@@ -62,8 +62,8 @@ export declare const performance: {
   clearMarks(name?: string): void;
   clearMeasures(name?: string): void;
   getEntries(): PerformanceEntry[];
-  getEntriesByName(name: string, type_?: string): PerformanceEntry[];
-  getEntriesByType(type_: string): PerformanceEntry[];
+  getEntriesByName(name: string, type?: string): PerformanceEntry[];
+  getEntriesByType(type: string): PerformanceEntry[];
   mark(name: string, options?: MarkOptions): PerformanceMark;
   measure(name: string, startOrOptions?: unknown, endMark?: string): PerformanceMeasure;
   now(): double;
@@ -129,8 +129,8 @@ export const PerformanceObserver: {
 ```ts
 export interface PerformanceObserverEntryList {
     getEntries(): PerformanceEntry[];
-    getEntriesByName(name: string, type_?: string): PerformanceEntry[];
-    getEntriesByType(type_: string): PerformanceEntry[];
+    getEntriesByName(name: string, type?: string): PerformanceEntry[];
+    getEntriesByType(type: string): PerformanceEntry[];
 }
 
 export const PerformanceObserverEntryList: {

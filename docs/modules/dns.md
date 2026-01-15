@@ -25,7 +25,7 @@ export function main(): void {
 
 ```ts
 export interface AnyAaaaRecord extends RecordWithTtl {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyAaaaRecord: {
@@ -37,7 +37,7 @@ export const AnyAaaaRecord: {
 
 ```ts
 export interface AnyARecord extends RecordWithTtl {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyARecord: {
@@ -49,7 +49,7 @@ export const AnyARecord: {
 
 ```ts
 export interface AnyCaaRecord extends CaaRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyCaaRecord: {
@@ -61,7 +61,7 @@ export const AnyCaaRecord: {
 
 ```ts
 export interface AnyCnameRecord {
-    readonly type_: string;
+    readonly type: string;
     value: string;
 }
 
@@ -74,7 +74,7 @@ export const AnyCnameRecord: {
 
 ```ts
 export interface AnyMxRecord extends MxRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyMxRecord: {
@@ -86,7 +86,7 @@ export const AnyMxRecord: {
 
 ```ts
 export interface AnyNaptrRecord extends NaptrRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyNaptrRecord: {
@@ -98,7 +98,7 @@ export const AnyNaptrRecord: {
 
 ```ts
 export interface AnyNsRecord {
-    readonly type_: string;
+    readonly type: string;
     value: string;
 }
 
@@ -111,7 +111,7 @@ export const AnyNsRecord: {
 
 ```ts
 export interface AnyPtrRecord {
-    readonly type_: string;
+    readonly type: string;
     value: string;
 }
 
@@ -124,7 +124,7 @@ export const AnyPtrRecord: {
 
 ```ts
 export interface AnyRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyRecord: {
@@ -135,7 +135,7 @@ export const AnyRecord: {
 
 ```ts
 export interface AnySoaRecord extends SoaRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnySoaRecord: {
@@ -147,7 +147,7 @@ export const AnySoaRecord: {
 
 ```ts
 export interface AnySrvRecord extends SrvRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnySrvRecord: {
@@ -159,7 +159,7 @@ export const AnySrvRecord: {
 
 ```ts
 export interface AnyTlsaRecord extends TlsaRecord {
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyTlsaRecord: {
@@ -172,7 +172,7 @@ export const AnyTlsaRecord: {
 ```ts
 export interface AnyTxtRecord {
     entries: string[];
-    readonly type_: string;
+    readonly type: string;
 }
 
 export const AnyTxtRecord: {

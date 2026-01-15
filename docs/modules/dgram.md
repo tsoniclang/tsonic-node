@@ -41,7 +41,7 @@ export const BindOptions: {
 ```ts
 export declare const dgram: {
   createSocket(options: SocketOptions, callback?: Action<byte[], RemoteInfo>): DgramSocket;
-  createSocket(type_: string, callback?: Action<byte[], RemoteInfo>): DgramSocket;
+  createSocket(type: string, callback?: Action<byte[], RemoteInfo>): DgramSocket;
 };
 ```
 
@@ -116,7 +116,7 @@ export interface SocketOptions {
     reuseAddr: boolean;
     reusePort: boolean;
     sendBufferSize: Nullable<System_Internal.Int32>;
-    type_: string;
+    type: string;
 }
 
 export const SocketOptions: {

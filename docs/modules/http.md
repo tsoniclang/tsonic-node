@@ -81,8 +81,8 @@ export declare const http: {
   globalAgent_timeout: int;
   maxHeaderSize: int;
   createServer(requestListener?: Action<IncomingMessage, ServerResponse>): Server;
-  get_(options: RequestOptions, callback?: Action<IncomingMessage>): ClientRequest;
-  get_(url: string, callback?: Action<IncomingMessage>): ClientRequest;
+  get(options: RequestOptions, callback?: Action<IncomingMessage>): ClientRequest;
+  get(url: string, callback?: Action<IncomingMessage>): ClientRequest;
   request(options: RequestOptions, callback?: Action<IncomingMessage>): ClientRequest;
   request(url: string, callback?: Action<IncomingMessage>): ClientRequest;
   validateHeaderName(name: string): void;

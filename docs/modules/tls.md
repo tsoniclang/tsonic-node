@@ -94,7 +94,7 @@ export const DetailedPeerCertificate: {
 export interface EphemeralKeyInfo {
     name: string;
     size: int;
-    type_: string;
+    type: string;
 }
 
 export const EphemeralKeyInfo: {
@@ -191,7 +191,7 @@ export declare const tls: {
   createSecureContext(options?: SecureContextOptions): SecureContext;
   createServer(options: TlsOptions, secureConnectionListener?: Action<TLSSocket>): TLSServer;
   createServer(secureConnectionListener?: Action<TLSSocket>): TLSServer;
-  getCACertificates(type_?: string): string[];
+  getCACertificates(type?: string): string[];
   getCiphers(): string[];
   setDefaultCACertificates(certs: string[]): void;
 };

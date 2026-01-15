@@ -72,8 +72,8 @@ export declare const fs: {
   rmSync(path: string, recursive?: boolean): void;
   stat(path: string): Task<Stats>;
   statSync(path: string): Stats;
-  symlink(target: string, path: string, type_?: string): Task;
-  symlinkSync(target: string, path: string, type_?: string): void;
+  symlink(target: string, path: string, type?: string): Task;
+  symlinkSync(target: string, path: string, type?: string): void;
   truncate(path: string, len?: long): Task;
   truncateSync(path: string, len?: long): void;
   unlink(path: string): Task;

@@ -69,7 +69,7 @@ export declare const os: {
   release(): string;
   tmpdir(): string;
   totalmem(): long;
-  type_(): string;
+  type(): string;
   uptime(): long;
   userInfo(): UserInfo;
 };

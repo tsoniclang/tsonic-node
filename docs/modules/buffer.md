@@ -14,7 +14,7 @@ Example:
 import { console, Buffer } from "@tsonic/nodejs/index.js";
 
 export function main(): void {
-  const buf = Buffer.from_("hello", "utf8");
+  const buf = Buffer.from("hello", "utf8");
   console.log(buf.length);
 }
 ```
@@ -117,13 +117,13 @@ export const Buffer: {
     byteLength(str: string, encoding?: string): int;
     compare(buf1: Buffer, buf2: Buffer): int;
     concat(list: Buffer[], totalLength?: Nullable<System_Internal.Int32>): Buffer;
-    from_(buffer: Buffer): Buffer;
-    from_(array: byte[]): Buffer;
-    from_(array: int[]): Buffer;
-    from_(str: string, encoding?: string): Buffer;
+    from(buffer: Buffer): Buffer;
+    from(array: byte[]): Buffer;
+    from(array: int[]): Buffer;
+    from(str: string, encoding?: string): Buffer;
     isBuffer(obj: unknown): boolean;
     isEncoding(encoding: string): boolean;
-    of_(...items: int[]): Buffer;
+    of(...items: int[]): Buffer;
 };
 ```
 <!-- API:END -->

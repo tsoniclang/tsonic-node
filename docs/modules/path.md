@@ -55,7 +55,7 @@ export declare const path: {
   matchesGlob(path: string, pattern: string): boolean;
   normalize(path: string): string;
   parse(path: string): ParsedPath;
-  relative(from_: string, to: string): string;
+  relative(from: string, to: string): string;
   resolve(...paths: string[]): string;
   toNamespacedPath(path: string): string;
 };
@@ -78,7 +78,7 @@ export interface PathModule {
     matchesGlob(path: string, pattern: string): boolean;
     normalize(path: string): string;
     parse(path: string): ParsedPath;
-    relative(from_: string, to: string): string;
+    relative(from: string, to: string): string;
     resolve(...paths: string[]): string;
     toNamespacedPath(path: string): string;
 }

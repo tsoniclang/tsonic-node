@@ -78,10 +78,10 @@ export declare const crypto: {
   createSecretKey(key: string, encoding?: string): KeyObject;
   createSign(algorithm: string): Sign;
   createVerify(algorithm: string): Verify;
-  generateKey(type_: string, options: unknown, callback: Action<Exception, KeyObject>): void;
-  generateKey(type_: string, options: unknown): KeyObject;
-  generateKeyPair(type_: string, options: unknown, callback: Action<Exception, unknown, unknown>): void;
-  generateKeyPairSync(type_: string, options?: unknown): ValueTuple<KeyObject, KeyObject>;
+  generateKey(type: string, options: unknown, callback: Action<Exception, KeyObject>): void;
+  generateKey(type: string, options: unknown): KeyObject;
+  generateKeyPair(type: string, options: unknown, callback: Action<Exception, unknown, unknown>): void;
+  generateKeyPairSync(type: string, options?: unknown): ValueTuple<KeyObject, KeyObject>;
   getCiphers(): string[];
   getCurves(): string[];
   getDefaultCipherList(): string;
@@ -176,9 +176,9 @@ export const DiffieHellman: {
 export interface DSAPrivateKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
+    export(options?: unknown): unknown;
 }
 
 export const DSAPrivateKeyObject: {
@@ -192,9 +192,9 @@ export const DSAPrivateKeyObject: {
 export interface DSAPublicKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
+    export(options?: unknown): unknown;
 }
 
 export const DSAPublicKeyObject: {
@@ -233,9 +233,9 @@ export const ECDH: {
 export interface EdDSAPrivateKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
+    export(options?: unknown): unknown;
 }
 
 export const EdDSAPrivateKeyObject: {
@@ -249,9 +249,9 @@ export const EdDSAPrivateKeyObject: {
 export interface EdDSAPublicKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
+    export(options?: unknown): unknown;
 }
 
 export const EdDSAPublicKeyObject: {
@@ -299,9 +299,9 @@ export const Hmac: {
 export interface KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
+    export(options?: unknown): unknown;
 }
 
 export const KeyObject: {
@@ -314,10 +314,10 @@ export const KeyObject: {
 export interface PrivateKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
-    export_(format: string, type_?: string, cipher?: string, passphrase?: string): string;
+    export(options?: unknown): unknown;
+    export(format: string, type?: string, cipher?: string, passphrase?: string): string;
 }
 
 export const PrivateKeyObject: {
@@ -331,10 +331,10 @@ export const PrivateKeyObject: {
 export interface PublicKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
-    export_(format: string, type_?: string): string;
+    export(options?: unknown): unknown;
+    export(format: string, type?: string): string;
 }
 
 export const PublicKeyObject: {
@@ -348,10 +348,10 @@ export const PublicKeyObject: {
 export interface SecretKeyObject extends KeyObject {
     readonly asymmetricKeyType: string | undefined;
     readonly symmetricKeySize: Nullable<System_Internal.Int32>;
-    readonly type_: string;
+    readonly type: string;
     dispose(): void;
-    export_(options?: unknown): unknown;
-    export_(): byte[];
+    export(options?: unknown): unknown;
+    export(): byte[];
 }
 
 export const SecretKeyObject: {
